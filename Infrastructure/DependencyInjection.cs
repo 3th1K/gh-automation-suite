@@ -28,4 +28,23 @@ public static class DependencyInjection
 
         return services;
     }
+
+    public static IServiceCollection AddFollowerManager(this IServiceCollection services, string username, string token)
+    {
+        services.AddHttpClient<IGitHubApiService, GitHubApiService>((client) =>
+        {
+            client.BaseAddress = new Uri("https://api.github.com/");
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            client.DefaultRequestHeaders.Add("User-Agent", "GitHubApiSolutions");
+        });
+
+        services.AddScoped<IGitHubFollowerManagerService>(provider =>
+            new GitHubFollowerManagerService(
+                provider.GetRequiredService<IGitHubApiService>(),
+                username
+            ));
+
+        return services;
+    }
 }
