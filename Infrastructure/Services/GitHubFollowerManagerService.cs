@@ -9,6 +9,7 @@ public class GitHubFollowerManagerService : IGitHubFollowerManagerService
     private string Username;
     private List<string> Followers = [];
     private List<string> Followings = [];
+    private List<string> UnfollowedUsers = [];
 
     public GitHubFollowerManagerService(IGitHubApiService gitHubApiService, string username)
     {
@@ -37,6 +38,7 @@ public class GitHubFollowerManagerService : IGitHubFollowerManagerService
             {
                 Console.WriteLine($"Unfollowed: {user}");
                 Followings.Remove(user);
+                UnfollowedUsers.Add(user);
             }
             else
             {
@@ -89,7 +91,8 @@ public class GitHubFollowerManagerService : IGitHubFollowerManagerService
     {
         Console.WriteLine($"Scraping users to follow, potential followers {targetCount}");
         var potentialFollowers = new HashSet<string>(); // Avoid duplicates
-        var visitedUsers = new HashSet<string>(Followers); // Initialize with known followers
+        var visitedUsers = new HashSet<string>(UnfollowedUsers); // Initialize with known followers and recently unfollowed users
+
         var queue = new Queue<string>(Followers); // Start with existing followers
 
         // Ensure the target count respects the initial known list size
@@ -121,7 +124,7 @@ public class GitHubFollowerManagerService : IGitHubFollowerManagerService
 
                 foreach (var follower in currentFollowers)
                 {
-                    if (!Followings.Contains(follower) && !Followers.Contains(follower) && !potentialFollowers.Contains(follower))
+                    if (!Followings.Contains(follower) && !Followers.Contains(follower) && !potentialFollowers.Contains(follower) && !UnfollowedUsers.Contains(follower))
                     {
                         potentialFollowers.Add(follower);
 
