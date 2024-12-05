@@ -11,8 +11,8 @@
 	  <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+  <ItemGroup>    
+	  <ProjectReference Include="..\..\Core\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
