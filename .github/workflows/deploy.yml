@@ -1,0 +1,45 @@
+name: Build and Deploy Blazor App to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master  # Trigger the workflow on push to main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the code
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Set up .NET SDK to build the Blazor app
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0'  # Use your Blazor app's required version of .NET
+
+    # Restore dependencies (if any)
+    - name: Restore dependencies
+      run: dotnet restore
+
+    # Build the Blazor app
+    - name: Build the Blazor app
+      run: dotnet publish --configuration Release --output ./publish
+
+    # Add .nojekyll to prevent GitHub from processing with Jekyll
+    - name: Add .nojekyll
+      run: echo > ./publish/wwwroot/.nojekyll
+
+    # Deploy to GitHub Pages
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        branch: gh-pages  # The branch that will receive the published files
+        folder: ./publish/wwwroot  # The folder to deploy (adjust if necessary)
+        clean: true  # Clean the branch before deploying new files
+
+    # Push the changes to the gh-pages branch
+    - name: Push changes to gh-pages branch
+      run: git push --force
