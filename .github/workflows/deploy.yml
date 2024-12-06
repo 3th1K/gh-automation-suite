@@ -13,6 +13,9 @@ jobs:
     # Checkout the code
     - name: Checkout repository
       uses: actions/checkout@v3
+    # Ensure gh-pages branch exists before deploying
+    - name: Set up gh-pages branch
+      run: git fetch origin gh-pages || git checkout --orphan gh-pages
 
     # Set up .NET SDK to build the Blazor app
     - name: Set up .NET
