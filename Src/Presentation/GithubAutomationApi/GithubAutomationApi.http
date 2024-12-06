@@ -1,6 +1,0 @@
-@GithubAutomationApi_HostAddress = http://localhost:5216
-
-GET {{GithubAutomationApi_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
