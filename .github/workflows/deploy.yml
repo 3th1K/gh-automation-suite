@@ -44,7 +44,3 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         clean: true  # Clean the branch before deploying new files
-
-    # Push the changes to the gh-pages branch
-    - name: Push changes to gh-pages branch
-      run: git push --force
