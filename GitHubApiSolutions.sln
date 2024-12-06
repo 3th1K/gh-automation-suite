@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GithubAutomationApi", "Src\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FollowerManager", "Src\Presentation\FollowerManager\FollowerManager.csproj", "{28AAFAB7-F37E-446D-BDCC-1561A5BD959A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GithubAutomation.Web", "Src\Presentation\GithubAutomation.Web\GithubAutomation.Web.csproj", "{098AF293-AACF-49BD-979E-72415A352E32}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GithubAutomation.Web", "Src\Presentation\GithubAutomation.Web\GithubAutomation.Web.csproj", "{098AF293-AACF-49BD-979E-72415A352E32}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
