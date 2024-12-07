@@ -35,6 +35,14 @@ jobs:
     - name: Add .nojekyll
       run: echo > ./publish/wwwroot/.nojekyll
 
+    - name: Clean the gh-pages branch
+      run: |
+        git checkout gh-pages
+        git rm -r *
+        git commit -m "Clean up gh-pages branch"
+        git push origin gh-pages
+
+
     # Deploy to GitHub Pages
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
