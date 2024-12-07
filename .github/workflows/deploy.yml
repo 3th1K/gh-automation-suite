@@ -35,13 +35,17 @@ jobs:
     - name: Add .nojekyll
       run: echo > ./publish/wwwroot/.nojekyll
 
+    - name: List files in gh-pages branch
+      run: |
+        git checkout gh-pages
+        ls -al
+
     - name: Clean the gh-pages branch
       run: |
         git checkout gh-pages
-        git rm -r *
-        git commit -m "Clean up gh-pages branch"
+        git rm -r * || echo "No files to delete"
+        git commit -m "Clean up gh-pages branch" || echo "Nothing to commit"
         git push origin gh-pages
-
 
     # Deploy to GitHub Pages
     - name: Deploy to GitHub Pages
