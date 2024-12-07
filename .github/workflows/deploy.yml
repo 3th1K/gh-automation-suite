@@ -35,12 +35,25 @@ jobs:
     - name: Add .nojekyll
       run: echo > ./publish/wwwroot/.nojekyll
 
+    - name: List files in gh-pages branch
+      run: |
+        git checkout gh-pages
+        ls -al
+
+    - name: Clean the gh-pages branch
+      run: |
+        git checkout gh-pages
+        git rm -r * || echo "No files to delete"
+        git commit -m "Clean up gh-pages branch" || echo "Nothing to commit"
+        git push origin gh-pages
+
     # Deploy to GitHub Pages
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         branch: gh-pages  # The branch that will receive the published files
         folder: ./publish/wwwroot  # The folder to deploy (adjust if necessary)
+        clean: true  # Clean the branch before deploying new files
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        clean: true  # Clean the branch before deploying new files
+        
