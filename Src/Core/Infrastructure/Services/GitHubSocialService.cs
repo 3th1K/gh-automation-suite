@@ -1,4 +1,5 @@
 ﻿using Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using Octokit;
 
 namespace Infrastructure.Services;
@@ -10,10 +11,12 @@ public class GitHubSocialService : IGitHubSocialService
     private List<string> _unfollowedUsers = [];
     private string _userApiToken = string.Empty;
 
+    private readonly ILogger<GitHubSocialService> _logger;
     private readonly GitHubClient _client;
 
-    public GitHubSocialService(GitHubClient client)
+    public GitHubSocialService(ILogger<GitHubSocialService> logger, GitHubClient client)
     {
+        _logger = logger;
         _client = client;
     }
 
@@ -26,12 +29,13 @@ public class GitHubSocialService : IGitHubSocialService
 
     public async Task FetchFollowersAndFollowing()
     {
-        Console.WriteLine("Fetching the followers and the followings");
+        _logger.LogInformation("Fetching the followers and the followings");
         var followers = await _client.User.Followers.GetAllForCurrent();
         var following = await _client.User.Followers.GetAllFollowingForCurrent();
         _followers = followers.Select(f => f.Login).ToList();
         _followings = following.Select(f => f.Login).ToList();
-        Console.WriteLine($"Followers - {_followers.Count}, Followings - {_followings.Count}");
+        _logger.LogInformation($"Followers - {_followers.Count}, Followings - {_followings.Count}");
+        await LogRate();
     }
 
     public async Task UnfollowUsersNotFollowingBack()
@@ -53,36 +57,38 @@ public class GitHubSocialService : IGitHubSocialService
             }
         }
         Console.WriteLine($"Followers - {_followers.Count}, Followings - {_followings.Count}");
+        await LogRate();
     }
 
     public async Task FollowUsersNotFollowedBack()
     {
-        Console.WriteLine("Following users that follows");
+        _logger.LogInformation("Following users that follows");
         var notFollowedBack = _followers.Except(_followings).ToList();
         foreach (var user in notFollowedBack)
         {
             bool success = await _client.User.Followers.Follow(user);
             if (success)
             {
-                Console.WriteLine($"Followed: {user}");
+                _logger.LogInformation($"Followed: {user}");
                 _followings.Add(user);
             }
             else
             {
-                Console.WriteLine($"Unable to Follow: {user}");
+                _logger.LogInformation($"Unable to Follow: {user}");
             }
         }
-        Console.WriteLine($"Followers - {_followers.Count}, Followings - {_followings.Count}");
+        _logger.LogInformation($"Followers - {_followers.Count}, Followings - {_followings.Count}");
+        await LogRate();
     }
 
     public async Task<List<string>> ScrapeFollowersOfFollowers()
     {
-        Console.WriteLine("Scraping users to follow");
+        _logger.LogInformation("Scraping users to follow");
         var potentialFollowers = new HashSet<string>();
         foreach (var follower in _followers)
         {
             var followerFollowers = await _client.User.Followers.GetAll(follower); //_gitHubApiService.GetFollowersAsync(follower);
-            foreach (var f in followerFollowers.Select(f=>f.Login))
+            foreach (var f in followerFollowers.Select(f => f.Login))
             {
                 if (!_followings.Contains(f) && !_followers.Contains(f))
                 {
@@ -90,13 +96,14 @@ public class GitHubSocialService : IGitHubSocialService
                 }
             }
         }
-        Console.WriteLine($"Found {potentialFollowers.Count} users to follow");
+        _logger.LogInformation($"Found {potentialFollowers.Count} users to follow");
+        await LogRate();
         return [.. potentialFollowers];
     }
 
     public async Task<List<string>> ScrapeFollowersOfFollowers(int targetCount)
     {
-        Console.WriteLine($"Scraping users to follow, potential followers {targetCount}");
+        _logger.LogInformation($"Scraping users to follow, potential followers {targetCount}");
         var potentialFollowers = new HashSet<string>(); // Avoid duplicates
         var visitedUsers = new HashSet<string>(_unfollowedUsers); // Initialize with known followers and recently unfollowed users
 
@@ -138,7 +145,8 @@ public class GitHubSocialService : IGitHubSocialService
                         // Stop if the target count is reached
                         if (potentialFollowers.Count >= targetCount)
                         {
-                            Console.WriteLine($"Found {potentialFollowers.Count} users to follow");
+                            _logger.LogInformation($"Found {potentialFollowers.Count} users to follow");
+                            await LogRate();
                             return potentialFollowers.ToList();
                         }
                     }
@@ -152,27 +160,30 @@ public class GitHubSocialService : IGitHubSocialService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching followers for {currentUser}: {ex.Message}");
+                _logger.LogError($"Error fetching followers for {currentUser}: {ex.Message}");
             }
         }
-        Console.WriteLine($"Found {potentialFollowers.Count} users to follow");
+        _logger.LogInformation($"Found {potentialFollowers.Count} users to follow");
+        await LogRate();
         return potentialFollowers.ToList();
     }
 
     public async Task FollowPotentialFollowers(List<string> potentialFollowers)
     {
-        Console.WriteLine("Following potential followers");
+        _logger.LogInformation("Following potential followers");
         foreach (var newUser in potentialFollowers)
         {
             bool success = await _client.User.Followers.Follow(newUser); //_gitHubApiService.FollowUserAsync(newUser);
             if (success)
             {
-                Console.WriteLine($"Followed: {newUser}");
+                _logger.LogInformation($"Followed: {newUser}");
+                await LogRate();
                 _followings.Add(newUser);
             }
             else
             {
-                Console.WriteLine($"Unable to Follow: {newUser}");
+                _logger.LogError($"Unable to Follow: {newUser}");
+                await LogRate();
             }
         }
         //await _gitHubApiService.LogRateLimitAsync();
@@ -185,15 +196,28 @@ public class GitHubSocialService : IGitHubSocialService
             bool success = await _client.User.Followers.Follow(newUser);//_gitHubApiService.FollowUserAsync(newUser);
             if (success)
             {
-                Console.WriteLine($"Followed: {newUser}");
+                _logger.LogInformation($"Followed: {newUser}");
+                await LogRate();
                 _followings.Add(newUser);
             }
             else
             {
-                Console.WriteLine($"Unable to Follow: {newUser}");
+                _logger.LogError($"Unable to Follow: {newUser}");
+                await LogRate();
             }
         }
 
         //await _gitHubApiService.LogRateLimitAsync();
+    }
+
+    private async Task LogRate()
+    {
+        var rateLimit = await _client.RateLimit.GetRateLimits();
+        var rate = rateLimit.Rate;
+        var remainingReq = rate.Remaining;
+        var resetTime = rate.Reset;
+        var limit = rate.Limit;
+
+        _logger.LogInformation($"Request Limit: {limit}, Remaining Requests: {remainingReq}, Reset Time: {resetTime}");
     }
 }

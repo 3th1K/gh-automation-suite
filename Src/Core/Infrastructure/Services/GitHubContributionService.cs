@@ -1,4 +1,5 @@
 ﻿using Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using Octokit;
 using System.Text;
 
@@ -10,10 +11,12 @@ public class GitHubContributionService : IGitHubContributionService
     private string _userApiToken = string.Empty;
     private string _repositoryName = string.Empty;
 
+    private readonly ILogger<GitHubContributionService> _logger;
     private readonly GitHubClient _client;
 
-    public GitHubContributionService(GitHubClient client)
+    public GitHubContributionService(ILogger<GitHubContributionService> logger, GitHubClient client)
     {
+        _logger = logger;
         _client = client;
     }
 

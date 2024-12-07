@@ -38,6 +38,26 @@
                                     }
                                 </InputRadioGroup>
                             </div>
+                            <div class="mb-3">
+                                <div class="slider-container">
+                                    <label class="slider">
+                                        <input type="checkbox" @bind="UnfollowUsersNotFollowingBack" />
+                                        <span class="slider-toggle"></span>
+                                    </label>
+                                    <p class="slider-description">Unfollow users who aren't following back</p>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="slider-container">
+                                    <label class="slider">
+                                        <input type="checkbox" @bind="FollowUsersNotFollowedBack" />
+                                        <span class="slider-toggle"></span>
+                                    </label>
+                                    <p class="slider-description">Follow users whom you didn't followed back</p>
+                                </div>
+                            </div>
+
+                            
                             @if (SelectedOption is YesNo.Yes)
                             {
                                 <div class="mb-3">
@@ -65,7 +85,11 @@
 
 @code {
     private string Token { get; set; } = string.Empty;
+
     private YesNo SelectedOption { get; set; } = YesNo.No;
+    private bool UnfollowUsersNotFollowingBack = true;
+    private bool FollowUsersNotFollowedBack = true;
+
     private int Number { get; set; } = 100; // Default value
     private string ResponseMessage { get; set; } = string.Empty;
     private bool IsSuccess { get; set; }
@@ -80,11 +104,11 @@
         {
             if (SelectedOption is YesNo.Yes)
             {
-                await _gitHubService.AutomateGitHubSocialBoostAsync(Token, Number);
+                await _gitHubService.AutomateGitHubSocialBoostAsync(Token, Number, UnfollowUsersNotFollowingBack, FollowUsersNotFollowedBack);
             }
             else
             {
-                await _gitHubService.AutomateGitHubSocialBoostAsync(Token);
+                await _gitHubService.AutomateGitHubSocialBoostAsync(Token, UnfollowUsersNotFollowingBack, FollowUsersNotFollowedBack);
             }
 
             IsSuccess = true;
