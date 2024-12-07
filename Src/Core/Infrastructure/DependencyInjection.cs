@@ -8,44 +8,9 @@ namespace Infrastructure.DependencyInjection;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddFollowerManager(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddSocialService(this IServiceCollection services)
     {
-        string token = config["token"] ?? throw new ArgumentNullException();
-        string username = config["username"] ?? throw new ArgumentNullException();
-
-        services.AddHttpClient<IGitHubApiService, GitHubApiService>((client) =>
-        {
-            client.BaseAddress = new Uri("https://api.github.com/");
-            client.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            client.DefaultRequestHeaders.Add("User-Agent", "GitHubApiSolutions");
-        });
-
-        services.AddScoped<IGitHubFollowerManagerService>(provider =>
-            new GitHubFollowerManagerService(
-                provider.GetRequiredService<IGitHubApiService>(),
-                username
-            ));
-
-        return services;
-    }
-
-    public static IServiceCollection AddFollowerManager(this IServiceCollection services, string username, string token)
-    {
-        services.AddHttpClient<IGitHubApiService, GitHubApiService>((client) =>
-        {
-            client.BaseAddress = new Uri("https://api.github.com/");
-            client.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            client.DefaultRequestHeaders.Add("User-Agent", "GitHubApiSolutions");
-        });
-
-        services.AddScoped<IGitHubFollowerManagerService>(provider =>
-            new GitHubFollowerManagerService(
-                provider.GetRequiredService<IGitHubApiService>(),
-                username
-            ));
-
+        services.AddScoped<IGitHubSocialService, GitHubSocialService>();
         return services;
     }
 
@@ -55,7 +20,8 @@ public static class DependencyInjection
         {
             return new GitHubClient(new ProductHeaderValue("GitHubAutomationApp"));
         });
-
+        services.AddScoped<IGitHubSocialService, GitHubSocialService>();
+        services.AddScoped<IGitHubContributionService, GitHubContributionService>();
         services.AddScoped<IGitHubAutomationService, GitHubAutomationService>();
 
         return services;

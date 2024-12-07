@@ -2,7 +2,9 @@
 
 public interface IGitHubAutomationService
 {
-    void Configure(string userName, string userApiToken, string repositoryName);
+    Task AutomateGitHubContributionAsync(string userApiToken, string repositoryName);
 
-    Task AutomateGitHubContributionAsync();
+    Task AutomateGitHubSocialBoostAsync(string userApiToken);
+
+    Task AutomateGitHubSocialBoostAsync(string userApiToken, int num = 100);
 }

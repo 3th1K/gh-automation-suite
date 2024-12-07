@@ -7,40 +7,43 @@ var services = new ServiceCollection();
 var config = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .Build();
+services.AddSocialService();
 
-Console.Write("Enter your GitHub username: ");
-string? username = Console.ReadLine();
 Console.Write("Enter your GitHub API token: ");
 string? token = Console.ReadLine();
 
-if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(token))
-    services.AddFollowerManager(config);
-else
-    services.AddFollowerManager(username, token);
-
 var serviceProvider = services.BuildServiceProvider();
 
-var githubFollowerManagerService = serviceProvider.GetRequiredService<IGitHubFollowerManagerService>();
+var socialService = serviceProvider.GetRequiredService<IGitHubSocialService>();
+
+if (string.IsNullOrEmpty(token))
+{
+    socialService.Configure(config["token"] ?? throw new ArgumentNullException());
+}
+else
+{
+    socialService.Configure(token);
+}
 
 // Step 1: Fetch followers and following
-await githubFollowerManagerService.FetchFollowersAndFollowing();
+await socialService.FetchFollowersAndFollowing();
 
 // Step 2: Find users to unfollow
-await githubFollowerManagerService.UnfollowUsersNotFollowingBack();
+await socialService.UnfollowUsersNotFollowingBack();
 
 // Step 3: Find users to follow back
-await githubFollowerManagerService.FollowUsersNotFollowedBack();
+await socialService.FollowUsersNotFollowedBack();
 
 // Step 4: Scrape followers of followers
 List<string> potentialFollowers = [];
 Console.Write("Specify a number of potential followers to scrape [Leave blank for normal scraping]: ");
 int num = Convert.ToInt32(Console.ReadLine());
 if (num > 0)
-    potentialFollowers = await githubFollowerManagerService.ScrapeFollowersOfFollowers(num);
+    potentialFollowers = await socialService.ScrapeFollowersOfFollowers(num);
 else
-    potentialFollowers = await githubFollowerManagerService.ScrapeFollowersOfFollowers();
+    potentialFollowers = await socialService.ScrapeFollowersOfFollowers();
 
 // Step 5: Follow potential followers
-await githubFollowerManagerService.FollowPotentialFollowers(potentialFollowers);
+await socialService.FollowPotentialFollowers(potentialFollowers);
 
 Console.WriteLine("Operation completed.");

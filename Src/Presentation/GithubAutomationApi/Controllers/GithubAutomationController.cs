@@ -20,9 +20,7 @@ namespace GithubAutomationApi.Controllers
         {
             try
             {
-                _gitHubService.Configure(request.Username, request.Token, request.RepositoryName);
-
-                await _gitHubService.AutomateGitHubContributionAsync();
+                await _gitHubService.AutomateGitHubContributionAsync(request.Token, request.RepositoryName);
                 return Ok();
             }
             catch (Exception ex)

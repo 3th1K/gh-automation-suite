@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Application.Interfaces;
 
-namespace Application.Interfaces;
-
-public interface IGitHubFollowerManagerService
+public interface IGitHubSocialService
 {
+    void Configure(string userApiToken);
+
     Task FetchFollowersAndFollowing();
 
     Task UnfollowUsersNotFollowingBack();
