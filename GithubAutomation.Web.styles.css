@@ -160,3 +160,58 @@ main[b-z0xbhoz0aa] {
         overflow-y: auto;
     }
 }
+/* /Pages/Social.razor.rz.scp.css */
+.slider-container[b-mbhxa7in9b] {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Adjust the spacing between slider and text */
+}
+
+.slider[b-mbhxa7in9b] {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+    .slider input[b-mbhxa7in9b] {
+        display: none;
+    }
+
+.slider-toggle[b-mbhxa7in9b] {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 34px;
+    transition: 0.4s;
+}
+
+    .slider-toggle[b-mbhxa7in9b]::before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        border-radius: 50%;
+        transition: 0.4s;
+    }
+
+input:checked + .slider-toggle[b-mbhxa7in9b] {
+    background-color: #4CAF50;
+}
+
+    input:checked + .slider-toggle[b-mbhxa7in9b]::before {
+        transform: translateX(26px);
+    }
+
+.slider-description[b-mbhxa7in9b] {
+    margin: 0;
+    font-size: 14px; /* Adjust as needed */
+    color: #333;
+}
