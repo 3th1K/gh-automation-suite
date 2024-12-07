@@ -33,23 +33,23 @@
       "url": "_framework\/icudt_no_CJK.dat"
     },
     {
-      "hash": "sha256-Ahge8iOUIMKyPhbrsuWmdSjG\/I4CIJhYGYfNasIQRBo=",
+      "hash": "sha256-ZQN3D5mrT9OIP9DiAM17K4KKkQaHIoFLfwwsK07sit0=",
       "url": "_framework\/blazor.boot.json"
     },
     {
-      "hash": "sha256-hztrQ4PPvmhBbo2pMPqHEBxfgGTTkJMvuwvNHiegF1Y=",
+      "hash": "sha256-FPF8gAmw7yo\/Wpc24Fx2ExM7Ty5vowyRmmLWbzfXEKc=",
       "url": "_framework\/Application.wasm"
     },
     {
-      "hash": "sha256-G41+qhu4WJnf8\/HV9SeedEtxvAse7ACxUN1GL6OKxto=",
+      "hash": "sha256-MXwoY9p\/RhzLA3QXJHxCHU6KjMqB8GVxbE93Xawy6m4=",
       "url": "_framework\/Domain.wasm"
     },
     {
-      "hash": "sha256-clSPtK0g206fGgcC1S3DdR0NkXvtU85LjqVEiRht9C0=",
+      "hash": "sha256-MKvKNcIVfDSZc+Jzue4uzlQVM7QQPDuDJPvf+QbcaMU=",
       "url": "_framework\/GithubAutomation.Web.wasm"
     },
     {
-      "hash": "sha256-p4G0UoWMV5PBljZ7JMtQyGqSVrwMEUAFXKUzbKUBY6M=",
+      "hash": "sha256-5kclQ5EAiSq8uAOa0wuk07t6FxzFpII7augg5zeVP2Y=",
       "url": "_framework\/Infrastructure.wasm"
     },
     {
@@ -341,5 +341,5 @@
       "url": "sample-data\/weather.json"
     }
   ],
-  "version": "qH2kF+yW"
+  "version": "g0mgE+bS"
 };
