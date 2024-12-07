@@ -41,6 +41,7 @@ jobs:
       with:
         branch: gh-pages  # The branch that will receive the published files
         folder: ./publish/wwwroot  # The folder to deploy (adjust if necessary)
+        clean: true  # Clean the branch before deploying new files
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        clean: true  # Clean the branch before deploying new files
+        
