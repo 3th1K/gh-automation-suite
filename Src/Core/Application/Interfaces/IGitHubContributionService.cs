@@ -4,7 +4,7 @@ namespace Application.Interfaces;
 
 public interface IGitHubContributionService
 {
-    void Configure(string userApiToken, string repositoryName);
+    Task Configure(string userApiToken, string repositoryName);
 
     Task<Repository> EnsureRepositoryExistsAsync();
 

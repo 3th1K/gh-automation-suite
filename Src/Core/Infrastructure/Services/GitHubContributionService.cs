@@ -20,12 +20,22 @@ public class GitHubContributionService : IGitHubContributionService
         _client = client;
     }
 
-    public void Configure(string userApiToken, string repositoryName)
+    public async Task Configure(string userApiToken, string repositoryName)
     {
         _userApiToken = userApiToken;
         _client.Credentials = new Credentials(_userApiToken);
-        _userName = _client.User.Current().Result.Login;
+        _userName = await GetUsername();
         _repositoryName = repositoryName;
+    }
+
+    private async Task<string> GetUsername()
+    {
+        var user = await _client.User.Current();
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+        return user.Login;
     }
 
     public async Task<Repository> EnsureRepositoryExistsAsync()

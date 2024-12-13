@@ -21,7 +21,7 @@ public class GitHubAutomationService : IGitHubAutomationService
     public async Task AutomateGitHubContributionAsync(string userApiToken, string repositoryName)
     {
         _logger.LogInformation("Automated contribution started!");
-        _contributionService.Configure(userApiToken, repositoryName);
+        await _contributionService.Configure(userApiToken, repositoryName);
         var repository = await _contributionService.EnsureRepositoryExistsAsync();
 
         var fileName = $"{DateTime.UtcNow:yyyy-MM-dd}.txt";
