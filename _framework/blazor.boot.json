@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "GithubAutomation.Web",
   "resources": {
-    "hash": "sha256-Y7qmwhuTrEBvpVJ7BdHWtfeCYgHNO90IRy7LGKeQFKU=",
+    "hash": "sha256-RZEhJQoVXaPCXkn704hbouJwiVTsWobKrrLAjcCYI2o=",
     "jsModuleNative": {
       "dotnet.native.8.0.11.n1sf6xr5tz.js": "sha256-VdKq87/z5NIxZKmuM+fv38XF+RcEb/bg3jVBwQSfwP4="
     },
@@ -17,10 +17,10 @@
       "icudt_no_CJK.dat": "sha256-L7sV7NEYP37/Qr2FPCePo5cJqRgTXRwGHuwF5Q+0Nfs="
     },
     "assembly": {
-      "Application.wasm": "sha256-ew/z6rl7fY2/kgljF5+e+PT5eIlurR0cVwKkTZduDuc=",
-      "Domain.wasm": "sha256-xU0MAFcz4XiuznO+Kuc5wJ2mPnUpuZ/xNfJ8hSYJWf4=",
-      "GithubAutomation.Web.wasm": "sha256-Z2/7t8/eovabESfDbrZ7Mfvfx+PgT6uUvl9MMEendy4=",
-      "Infrastructure.wasm": "sha256-bbYmtJ1ukR79eJxpOpiMTqOoDcFFRuvKvsq1j7zfuAo=",
+      "Application.wasm": "sha256-IGO1itYwG+hO16M423/tKvAMgEMVgHsJgxMBoAAGO+Y=",
+      "Domain.wasm": "sha256-rAlWN33G8cia2BSHz2WoHQI3dIQXXUYdxBXGAMQ/hr4=",
+      "GithubAutomation.Web.wasm": "sha256-kFlF9pIbDeViQj2aB5twxk5XcJyuOBtfD8MV61Iy6j0=",
+      "Infrastructure.wasm": "sha256-aiisbGO5lKvLaF0ELdPudZB9tFmI308OTM5HNkHJBck=",
       "Microsoft.AspNetCore.Components.Forms.wasm": "sha256-AB7P72nA6ejuXLycHnmXmIfIqHR2kghw0gVj0mWflDc=",
       "Microsoft.AspNetCore.Components.wasm": "sha256-aFcObNRMHAN0ApXG9SGXbZh8iewz1BpN1YymCwRhS9s=",
       "Microsoft.AspNetCore.Components.Web.wasm": "sha256-6US0IW6Joq+OSMBVzh4K20CMpt/bm+iDPig6uXOvpFo=",

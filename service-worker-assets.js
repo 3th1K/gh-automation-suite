@@ -33,23 +33,23 @@
       "url": "_framework\/icudt_no_CJK.dat"
     },
     {
-      "hash": "sha256-wd0nsQCI3jBJ+DlmH3VtVkUC9TUJv1sP4UZ8SuQygrw=",
+      "hash": "sha256-li24lOFx3T2uTJeq9AjHirrzAReJCHxFu4pISRyGjEQ=",
       "url": "_framework\/blazor.boot.json"
     },
     {
-      "hash": "sha256-ew\/z6rl7fY2\/kgljF5+e+PT5eIlurR0cVwKkTZduDuc=",
+      "hash": "sha256-IGO1itYwG+hO16M423\/tKvAMgEMVgHsJgxMBoAAGO+Y=",
       "url": "_framework\/Application.wasm"
     },
     {
-      "hash": "sha256-xU0MAFcz4XiuznO+Kuc5wJ2mPnUpuZ\/xNfJ8hSYJWf4=",
+      "hash": "sha256-rAlWN33G8cia2BSHz2WoHQI3dIQXXUYdxBXGAMQ\/hr4=",
       "url": "_framework\/Domain.wasm"
     },
     {
-      "hash": "sha256-Z2\/7t8\/eovabESfDbrZ7Mfvfx+PgT6uUvl9MMEendy4=",
+      "hash": "sha256-kFlF9pIbDeViQj2aB5twxk5XcJyuOBtfD8MV61Iy6j0=",
       "url": "_framework\/GithubAutomation.Web.wasm"
     },
     {
-      "hash": "sha256-bbYmtJ1ukR79eJxpOpiMTqOoDcFFRuvKvsq1j7zfuAo=",
+      "hash": "sha256-aiisbGO5lKvLaF0ELdPudZB9tFmI308OTM5HNkHJBck=",
       "url": "_framework\/Infrastructure.wasm"
     },
     {
@@ -301,11 +301,11 @@
       "url": "_framework\/System.Xml.XDocument.wasm"
     },
     {
-      "hash": "sha256-JG7DqWtT\/q2rA3DIYq7WzXox9Ypfr24zr7Gdpx517Aw=",
+      "hash": "sha256-uvQKF0OmuZNyhHh+QHkHg2AyB5i7cC1RVy\/GnHEH7es=",
       "url": "GithubAutomation.Web.styles.css"
     },
     {
-      "hash": "sha256-yis2dNdJ6e9R472mcuwUOsxBPCQX3snSMmHAL3zu2D8=",
+      "hash": "sha256-9ammFgaoZNAm1VWwZ0PWLwXZBJPrG4LgOW65XKFxRFI=",
       "url": "css\/app.css"
     },
     {
@@ -337,9 +337,9 @@
       "url": "manifest.webmanifest"
     },
     {
-      "hash": "sha256-paIeuWnSzjeLGITWkk4p3rcejUsZWCJGPeOK9UhWXtg=",
+      "hash": "sha256-QqKYoWuaE552T6ab0nGrDKMOekLAOBZQd2Rd7OKUkJo=",
       "url": "sample-data\/weather.json"
     }
   ],
-  "version": "sFhUqyIt"
+  "version": "fPtwk8CQ"
 };
