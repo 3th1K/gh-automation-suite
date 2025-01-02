@@ -173,17 +173,24 @@ public class GitHubSocialService : IGitHubSocialService
         _logger.LogInformation("Following potential followers");
         foreach (var newUser in potentialFollowers)
         {
-            bool success = await _client.User.Followers.Follow(newUser); //_gitHubApiService.FollowUserAsync(newUser);
-            if (success)
+            try
             {
-                _logger.LogInformation($"Followed: {newUser}");
-                await LogRate();
-                _followings.Add(newUser);
+                bool success = await _client.User.Followers.Follow(newUser);//_gitHubApiService.FollowUserAsync(newUser);
+                if (success)
+                {
+                    _logger.LogInformation($"Followed: {newUser}");
+                    await LogRate();
+                    _followings.Add(newUser);
+                }
+                else
+                {
+                    _logger.LogError($"Unable to Follow: {newUser}");
+                    await LogRate();
+                }
             }
-            else
+            catch (Exception e)
             {
-                _logger.LogError($"Unable to Follow: {newUser}");
-                await LogRate();
+                _logger.LogError($"Error: {e.Message}");
             }
         }
         //await _gitHubApiService.LogRateLimitAsync();

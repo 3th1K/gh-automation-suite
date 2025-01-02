@@ -1,8 +1,13 @@
+using Hangfire;
 using Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+
+// Add Hangfire services
+builder.Services.AddHangfire(config =>
+    config.UseInMemoryStorage());
+builder.Services.AddHangfireServer();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -18,6 +23,8 @@ if (app.Environment.IsDevelopment())
 }
 app.UseSwagger();
 app.UseSwaggerUI();
+
+app.UseHangfireDashboard("/hangfire");
 
 app.UseHttpsRedirection();
 
