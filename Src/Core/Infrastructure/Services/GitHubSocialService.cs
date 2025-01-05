@@ -1,6 +1,8 @@
 ﻿using Application.Interfaces;
+using Infrastructure.Utilities;
 using Microsoft.Extensions.Logging;
 using Octokit;
+using System.Collections.Concurrent;
 
 namespace Infrastructure.Services;
 
@@ -30,86 +32,117 @@ public class GitHubSocialService : IGitHubSocialService
     public async Task FetchFollowersAndFollowing()
     {
         _logger.LogInformation("Fetching the followers and the followings");
-        var followers = await _client.User.Followers.GetAllForCurrent();
-        var following = await _client.User.Followers.GetAllFollowingForCurrent();
+
+        // Run the tasks in parallel
+        var followersTask = _client.User.Followers.GetAllForCurrent();
+        var followingTask = _client.User.Followers.GetAllFollowingForCurrent();
+
+        // Await both tasks to complete
+        await Task.WhenAll(followersTask, followingTask);
+
+        // Retrieve the results
+        var followers = await followersTask;
+        var following = await followingTask;
+
+        // Process the results
         _followers = followers.Select(f => f.Login).ToList();
         _followings = following.Select(f => f.Login).ToList();
+
         _logger.LogInformation($"Followers - {_followers.Count}, Followings - {_followings.Count}");
+
         await LogRate();
     }
 
+
     public async Task UnfollowUsersNotFollowingBack()
     {
-        Console.WriteLine("Unfollowing the users who arent following back");
+        _logger.LogInformation("Unfollowing the users who aren't following back");
         var notFollowingBack = _followings.Except(_followers).ToList();
-        foreach (var user in notFollowingBack)
+        _logger.LogInformation($"These users ({notFollowingBack.Count}) are not following back: {string.Join(", ", notFollowingBack)}");
+
+        await Parallel.ForEachAsync(notFollowingBack, async (user, cancellationToken) =>
         {
             try
             {
                 await _client.User.Followers.Unfollow(user);
-                Console.WriteLine($"Unfollowed: {user}");
+                _logger.LogInformation($"Unfollowed: {user}");
                 _followings.Remove(user);
                 _unfollowedUsers.Add(user);
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Unable to Unfollow: {user}, Error : {e.Message}");
+                _logger.LogError($"Unable to unfollow: {user}, Error: {e.Message}");
             }
-        }
-        Console.WriteLine($"Followers - {_followers.Count}, Followings - {_followings.Count}");
-        await LogRate();
-    }
+        });
 
-    public async Task FollowUsersNotFollowedBack()
-    {
-        _logger.LogInformation("Following users that follows");
-        var notFollowedBack = _followers.Except(_followings).ToList();
-        foreach (var user in notFollowedBack)
-        {
-            bool success = await _client.User.Followers.Follow(user);
-            if (success)
-            {
-                _logger.LogInformation($"Followed: {user}");
-                _followings.Add(user);
-            }
-            else
-            {
-                _logger.LogInformation($"Unable to Follow: {user}");
-            }
-        }
         _logger.LogInformation($"Followers - {_followers.Count}, Followings - {_followings.Count}");
         await LogRate();
     }
 
+
+    public async Task FollowUsersNotFollowedBack()
+    {
+        _logger.LogInformation("Following users who aren't being followed back");
+        var notFollowedBack = _followers.Except(_followings).ToList();
+        _logger.LogInformation($"These users ({notFollowedBack.Count}) are not being followed back: {string.Join(", ", notFollowedBack)}");
+
+        await Parallel.ForEachAsync(notFollowedBack, async (user, cancellationToken) =>
+        {
+            try
+            {
+                bool success = await _client.User.Followers.Follow(user);
+                if (success)
+                {
+                    _logger.LogInformation($"Followed: {user}");
+                    _followings.Add(user);
+                }
+                else
+                {
+                    _logger.LogInformation($"Unable to follow: {user}");
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError($"Error following {user}: {e.Message}");
+            }
+        });
+
+        _logger.LogInformation($"Followers - {_followers.Count}, Followings - {_followings.Count}");
+        await LogRate();
+    }
+
+
     public async Task<List<string>> ScrapeFollowersOfFollowers()
     {
         _logger.LogInformation("Scraping users to follow");
-        var potentialFollowers = new HashSet<string>();
-        foreach (var follower in _followers)
+        var potentialFollowers = new ConcurrentHashSet<string>();
+
+        await Parallel.ForEachAsync(_followers, async (follower, cancellationToken) =>
         {
-            var followerFollowers = await _client.User.Followers.GetAll(follower); //_gitHubApiService.GetFollowersAsync(follower);
-            foreach (var f in followerFollowers.Select(f => f.Login))
+            var followerFollowers = await _client.User.Followers.GetAll(follower);
+            foreach (var f in followerFollowers.Select(ff => ff.Login))
             {
                 if (!_followings.Contains(f) && !_followers.Contains(f))
                 {
                     potentialFollowers.Add(f);
                 }
             }
-        }
+        });
+
         _logger.LogInformation($"Found {potentialFollowers.Count} users to follow");
         await LogRate();
-        return [.. potentialFollowers];
+        return potentialFollowers.ToList();
     }
+
 
     public async Task<List<string>> ScrapeFollowersOfFollowers(int targetCount)
     {
-        _logger.LogInformation($"Scraping users to follow, potential followers {targetCount}");
-        var potentialFollowers = new HashSet<string>(); // Avoid duplicates
-        var visitedUsers = new HashSet<string>(_unfollowedUsers); // Initialize with known followers and recently unfollowed users
+        _logger.LogInformation($"Scraping users to follow, target count: {targetCount}");
+        var potentialFollowers = new ConcurrentHashSet<string>(); // Avoid duplicates
+        var visitedUsers = new ConcurrentHashSet<string>(_unfollowedUsers); // Initialize with known followers and recently unfollowed users
+        var queue = new ConcurrentQueue<string>(_followers); // Start with existing followers
 
-        var queue = new Queue<string>(_followers); // Start with existing followers
-
-        // Ensure the target count respects the initial known list size
+        // Add direct followers not in followings to potential followers
         foreach (var follower in _followers)
         {
             if (!_followings.Contains(follower))
@@ -120,21 +153,20 @@ public class GitHubSocialService : IGitHubSocialService
             }
         }
 
-        // Continue expanding from followers' followers
-        while (queue.Count > 0 && potentialFollowers.Count < targetCount)
+        // Use Parallel.ForEachAsync to process users concurrently
+        var stopProcessing = false; // Flag to stop processing once the target is reached
+        await Parallel.ForEachAsync(queue, async (currentUser, cancellationToken) =>
         {
-            var currentUser = queue.Dequeue();
+            if (stopProcessing) return; // Stop processing if flag is set
 
-            // Skip already visited users
             if (visitedUsers.Contains(currentUser))
-                continue;
+                return;
 
             visitedUsers.Add(currentUser); // Mark as visited
 
             try
             {
-                // Fetch followers of the current user only for new users
-                var currentFollowers = await _client.User.Followers.GetAll(currentUser); //_gitHubApiService.GetFollowersAsync(currentUser);
+                var currentFollowers = await _client.User.Followers.GetAll(currentUser);
 
                 foreach (var follower in currentFollowers.Select(f => f.Login))
                 {
@@ -147,11 +179,11 @@ public class GitHubSocialService : IGitHubSocialService
                         {
                             _logger.LogInformation($"Found {potentialFollowers.Count} users to follow");
                             await LogRate();
-                            return potentialFollowers.ToList();
+                            stopProcessing = true; // Set the flag to stop further processing
+                            return; // Exit early from the parallel loop
                         }
                     }
 
-                    // Add new follower to the queue for further exploration
                     if (!visitedUsers.Contains(follower))
                     {
                         queue.Enqueue(follower);
@@ -162,67 +194,77 @@ public class GitHubSocialService : IGitHubSocialService
             {
                 _logger.LogError($"Error fetching followers for {currentUser}: {ex.Message}");
             }
-        }
+        });
+
         _logger.LogInformation($"Found {potentialFollowers.Count} users to follow");
         await LogRate();
         return potentialFollowers.ToList();
     }
 
+
+
+
     public async Task FollowPotentialFollowers(List<string> potentialFollowers)
     {
         _logger.LogInformation("Following potential followers");
-        foreach (var newUser in potentialFollowers)
+
+        await Parallel.ForEachAsync(potentialFollowers, async (newUser, cancellationToken) =>
         {
             try
             {
-                bool success = await _client.User.Followers.Follow(newUser);//_gitHubApiService.FollowUserAsync(newUser);
+                bool success = await _client.User.Followers.Follow(newUser);
                 if (success)
                 {
                     _logger.LogInformation($"Followed: {newUser}");
-                    await LogRate();
                     _followings.Add(newUser);
                 }
                 else
                 {
                     _logger.LogError($"Unable to Follow: {newUser}");
-                    await LogRate();
                 }
+                await LogRate();
             }
             catch (Exception e)
-            {
-                _logger.LogError($"Error: {e.Message}");
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             {
+                _logger.LogError($"Error following {newUser}: {e.Message}");
             }
-        }
-        //await _gitHubApiService.LogRateLimitAsync();
+        });
+
+        _logger.LogInformation("Finished following potential followers");
     }
+
 
     public async Task FollowPotentialFollowers(List<string> potentialFollowers, int num)
     {
-        foreach (var newUser in potentialFollowers.Take(num))
+        var usersToFollow = potentialFollowers.Take(num).ToList();
+
+        _logger.LogInformation($"Following up to {num} potential followers");
+
+        await Parallel.ForEachAsync(usersToFollow, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (newUser, cancellationToken) =>
         {
             try
             {
-                bool success = await _client.User.Followers.Follow(newUser);//_gitHubApiService.FollowUserAsync(newUser);
+                bool success = await _client.User.Followers.Follow(newUser);
                 if (success)
                 {
                     _logger.LogInformation($"Followed: {newUser}");
-                    await LogRate();
                     _followings.Add(newUser);
                 }
                 else
                 {
                     _logger.LogError($"Unable to Follow: {newUser}");
-                    await LogRate();
                 }
+                await LogRate();
             }
             catch (Exception e)
             {
-                _logger.LogError($"Error: {e.Message}");
+                _logger.LogError($"Error following {newUser}: {e.Message}");
             }
-        }
+        });
 
-        //await _gitHubApiService.LogRateLimitAsync();
+        _logger.LogInformation("Finished following potential followers");
     }
+
 
     private async Task LogRate()
     {
