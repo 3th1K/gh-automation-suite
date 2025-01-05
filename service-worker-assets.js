@@ -33,19 +33,19 @@
       "url": "_framework\/icudt_no_CJK.dat"
     },
     {
-      "hash": "sha256-bQ7cOH00ls\/FRQ1zNI1ffeFgVUqe3XAw4cUue2QlzwQ=",
+      "hash": "sha256-6wwOQbe4QG4LCy3HmC9w8AOfm7JkvTffKO73uUsBGcY=",
       "url": "_framework\/blazor.boot.json"
     },
     {
-      "hash": "sha256-xMDVC32oeFcmZjwNy\/n3C0l5wq1ASwa+BfFpfeiuKm4=",
+      "hash": "sha256-t04dmvrx+lSOEaILstaUljWB0n7WBybD94EQC1LSuBc=",
       "url": "_framework\/Application.wasm"
     },
     {
-      "hash": "sha256-CJKCt2XciKOLLX5kUULgSyzKOkb++Iyozu7ASaAleok=",
+      "hash": "sha256-ATikObpZqFHv3Yd\/Ej93b1xuMzs6\/mvcRUOE4oLpDX8=",
       "url": "_framework\/Domain.wasm"
     },
     {
-      "hash": "sha256-75ZC3sRpEEep3nlAihhKR41YoN6NB512ne6ZIgTssPo=",
+      "hash": "sha256-Ro5c3ohsQnjZFxnrg6sKmTE7KDTvVZCVWn0M596i0YY=",
       "url": "_framework\/GithubAutomation.Web.wasm"
     },
     {
@@ -65,7 +65,7 @@
       "url": "_framework\/Hangfire.NetCore.wasm"
     },
     {
-      "hash": "sha256-BmXoPkZq4cEZC32Cwm5GBuJlwPpXOToWlgIo+3gJ30M=",
+      "hash": "sha256-QPZiUTAMsH7cEnbZjfpRvvCv7tEdDFu70LhmaXUpj3I=",
       "url": "_framework\/Infrastructure.wasm"
     },
     {
@@ -153,7 +153,7 @@
       "url": "_framework\/Octokit.wasm"
     },
     {
-      "hash": "sha256-EdFm\/jHFl09+0qZG2oR+YJ6hkHXQlJlh5Qb1bhs8jXU=",
+      "hash": "sha256-WvZyUNrZw6qVEh7czub1WpziBbxHDBvNwKydBamREUE=",
       "url": "_framework\/System.Collections.Concurrent.wasm"
     },
     {
@@ -249,7 +249,7 @@
       "url": "_framework\/System.ObjectModel.wasm"
     },
     {
-      "hash": "sha256-F9FpFZNZLC8ElQUrfSUKsLmYezjxVs83BF86QIUH958=",
+      "hash": "sha256-R68Tqp1o44S8RigX3uVJmcVYDr0zzwgvYoC7uK5y0us=",
       "url": "_framework\/System.Private.CoreLib.wasm"
     },
     {
@@ -333,7 +333,7 @@
       "url": "_framework\/System.Text.RegularExpressions.wasm"
     },
     {
-      "hash": "sha256-HzJDluWGtqdY6YrU1n8na3n+L4PT9JdJXB5d\/GGLVRI=",
+      "hash": "sha256-5y8ZVkLKZyE2Mg5x9nxXG0NLA7JD2xGAxfFxpV0W+E0=",
       "url": "_framework\/System.Threading.Tasks.Parallel.wasm"
     },
     {
@@ -457,5 +457,5 @@
       "url": "sample-data\/weather.json"
     }
   ],
-  "version": "bEnGpjWS"
+  "version": "4i1iZzTY"
 };
