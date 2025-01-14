@@ -3,6 +3,7 @@ using Infrastructure.Utilities;
 using Microsoft.Extensions.Logging;
 using Octokit;
 using System.Collections.Concurrent;
+using System.Net;
 
 namespace Infrastructure.Services;
 
@@ -31,27 +32,57 @@ public class GitHubSocialService : IGitHubSocialService
 
     public async Task FetchFollowersAndFollowing()
     {
-        _logger.LogInformation("Fetching the followers and the followings");
+        int maxRetryAttempts = 3;
+        int delayInSeconds = 300; // 5 minutes
 
-        // Run the tasks in parallel
-        var followersTask = _client.User.Followers.GetAllForCurrent();
-        var followingTask = _client.User.Followers.GetAllFollowingForCurrent();
+        for (int retry = 0; retry < maxRetryAttempts; retry++)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching the followers and the followings");
 
-        // Await both tasks to complete
-        await Task.WhenAll(followersTask, followingTask);
+                // Run the tasks in parallel
+                var followersTask = _client.User.Followers.GetAllForCurrent();
+                var followingTask = _client.User.Followers.GetAllFollowingForCurrent();
 
-        // Retrieve the results
-        var followers = await followersTask;
-        var following = await followingTask;
+                // Await both tasks to complete
+                await Task.WhenAll(followersTask, followingTask);
 
-        // Process the results
-        _followers = followers.Select(f => f.Login).ToList();
-        _followings = following.Select(f => f.Login).ToList();
+                // Retrieve the results
+                var followers = await followersTask;
+                var following = await followingTask;
 
-        _logger.LogInformation($"Followers - {_followers.Count}, Followings - {_followings.Count}");
+                // Process the results
+                _followers = followers.Select(f => f.Login).ToList();
+                _followings = following.Select(f => f.Login).ToList();
 
-        await LogRate();
+                _logger.LogInformation($"Followers - {_followers.Count}, Followings - {_followings.Count}");
+
+                await LogRate();
+                return; // Exit the method if successful
+            }
+            catch (ApiException e) when (e.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                _logger.LogWarning($"Too Many Requests, retrying in {delayInSeconds} seconds. Attempt {retry + 1} of {maxRetryAttempts}.");
+
+                if (retry < maxRetryAttempts - 1)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
+                }
+                else
+                {
+                    _logger.LogError("Max retry attempts reached. Aborting.");
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error fetching info: {ex.Message}");
+                throw;
+            }
+        }
     }
+
 
 
     public async Task UnfollowUsersNotFollowingBack()
@@ -62,22 +93,44 @@ public class GitHubSocialService : IGitHubSocialService
 
         await Parallel.ForEachAsync(notFollowingBack, async (user, cancellationToken) =>
         {
-            try
+            int maxRetryAttempts = 3;
+            int delayInSeconds = 300; // 5 minutes
+
+            for (int retry = 0; retry < maxRetryAttempts; retry++)
             {
-                await _client.User.Followers.Unfollow(user);
-                _logger.LogInformation($"Unfollowed: {user}");
-                _followings.Remove(user);
-                _unfollowedUsers.Add(user);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError($"Unable to unfollow: {user}, Error: {e.Message}");
+                try
+                {
+                    await _client.User.Followers.Unfollow(user);
+                    _logger.LogInformation($"Unfollowed: {user}");
+                    _followings.Remove(user);
+                    _unfollowedUsers.Add(user);
+                    break; // Exit the retry loop on success
+                }
+                catch (ApiException e) when (e.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    _logger.LogWarning($"Too Many Requests for user {user}, retrying in {delayInSeconds} seconds. Attempt {retry + 1} of {maxRetryAttempts}.");
+
+                    if (retry < maxRetryAttempts - 1)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
+                    }
+                    else
+                    {
+                        _logger.LogError($"Max retry attempts reached for user {user}. Skipping.");
+                    }
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError($"Unable to unfollow: {user}, Error: {e.Message}");
+                    break; // Exit the retry loop on other exceptions
+                }
             }
         });
 
         _logger.LogInformation($"Followers - {_followers.Count}, Followings - {_followings.Count}");
         await LogRate();
     }
+
 
 
     public async Task FollowUsersNotFollowedBack()
@@ -88,22 +141,43 @@ public class GitHubSocialService : IGitHubSocialService
 
         await Parallel.ForEachAsync(notFollowedBack, async (user, cancellationToken) =>
         {
-            try
+            int maxRetryAttempts = 3;
+            int delayInSeconds = 300; // 5 minutes
+
+            for (int retry = 0; retry < maxRetryAttempts; retry++)
             {
-                bool success = await _client.User.Followers.Follow(user);
-                if (success)
+                try
                 {
-                    _logger.LogInformation($"Followed: {user}");
-                    _followings.Add(user);
+                    bool success = await _client.User.Followers.Follow(user);
+                    if (success)
+                    {
+                        _logger.LogInformation($"Followed: {user}");
+                        _followings.Add(user);
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Unable to follow: {user}");
+                    }
+                    break; // Exit the retry loop on success
                 }
-                else
+                catch (ApiException e) when (e.StatusCode == HttpStatusCode.TooManyRequests)
                 {
-                    _logger.LogInformation($"Unable to follow: {user}");
+                    _logger.LogWarning($"Too Many Requests for user {user}, retrying in {delayInSeconds} seconds. Attempt {retry + 1} of {maxRetryAttempts}.");
+
+                    if (retry < maxRetryAttempts - 1)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
+                    }
+                    else
+                    {
+                        _logger.LogError($"Max retry attempts reached for user {user}. Skipping.");
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                _logger.LogError($"Error following {user}: {e.Message}");
+                catch (Exception e)
+                {
+                    _logger.LogError($"Error following {user}: {e.Message}");
+                    break; // Exit the retry loop on other exceptions
+                }
             }
         });
 
@@ -112,19 +186,50 @@ public class GitHubSocialService : IGitHubSocialService
     }
 
 
+
     public async Task<List<string>> ScrapeFollowersOfFollowers()
     {
         _logger.LogInformation("Scraping users to follow");
         var potentialFollowers = new ConcurrentHashSet<string>();
+        int count = 0;
 
         await Parallel.ForEachAsync(_followers, async (follower, cancellationToken) =>
         {
-            var followerFollowers = await _client.User.Followers.GetAll(follower);
-            foreach (var f in followerFollowers.Select(ff => ff.Login))
+            int maxRetryAttempts = 3;
+            int delayInSeconds = 300; // 5 minutes
+
+            for (int retry = 0; retry < maxRetryAttempts; retry++)
             {
-                if (!_followings.Contains(f) && !_followers.Contains(f))
+                try
                 {
-                    potentialFollowers.Add(f);
+                    var followerFollowers = await _client.User.Followers.GetAll(follower);
+                    foreach (var f in followerFollowers.Select(ff => ff.Login))
+                    {
+                        if (!_followings.Contains(f) && !_followers.Contains(f))
+                        {
+                            _logger.LogInformation($"Added {++count}-{f} to the potential followers list");
+                            potentialFollowers.Add(f);
+                        }
+                    }
+                    break; // Exit the retry loop on success
+                }
+                catch (ApiException e) when (e.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    _logger.LogWarning($"Too Many Requests for follower {follower}, retrying in {delayInSeconds} seconds. Attempt {retry + 1} of {maxRetryAttempts}.");
+
+                    if (retry < maxRetryAttempts - 1)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
+                    }
+                    else
+                    {
+                        _logger.LogError($"Max retry attempts reached for follower {follower}. Skipping.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error scraping {follower}: {ex.Message}");
+                    break; // Exit the retry loop on other exceptions
                 }
             }
         });
@@ -133,6 +238,7 @@ public class GitHubSocialService : IGitHubSocialService
         await LogRate();
         return potentialFollowers.ToList();
     }
+
 
 
     public async Task<List<string>> ScrapeFollowersOfFollowers(int targetCount)
@@ -153,46 +259,64 @@ public class GitHubSocialService : IGitHubSocialService
             }
         }
 
-        // Use Parallel.ForEachAsync to process users concurrently
         var stopProcessing = false; // Flag to stop processing once the target is reached
+
         await Parallel.ForEachAsync(queue, async (currentUser, cancellationToken) =>
         {
             if (stopProcessing) return; // Stop processing if flag is set
-
-            if (visitedUsers.Contains(currentUser))
-                return;
+            if (visitedUsers.Contains(currentUser)) return;
 
             visitedUsers.Add(currentUser); // Mark as visited
 
-            try
+            int maxRetryAttempts = 3;
+            int delayInSeconds = 300; // 5 minutes
+
+            for (int retry = 0; retry < maxRetryAttempts; retry++)
             {
-                var currentFollowers = await _client.User.Followers.GetAll(currentUser);
-
-                foreach (var follower in currentFollowers.Select(f => f.Login))
+                try
                 {
-                    if (!_followings.Contains(follower) && !_followers.Contains(follower) && !potentialFollowers.Contains(follower) && !_unfollowedUsers.Contains(follower))
-                    {
-                        potentialFollowers.Add(follower);
+                    var currentFollowers = await _client.User.Followers.GetAll(currentUser);
 
-                        // Stop if the target count is reached
-                        if (potentialFollowers.Count >= targetCount)
+                    foreach (var follower in currentFollowers.Select(f => f.Login))
+                    {
+                        if (!_followings.Contains(follower) && !_followers.Contains(follower) && !potentialFollowers.Contains(follower) && !_unfollowedUsers.Contains(follower))
                         {
-                            _logger.LogInformation($"Found {potentialFollowers.Count} users to follow");
-                            await LogRate();
-                            stopProcessing = true; // Set the flag to stop further processing
-                            return; // Exit early from the parallel loop
+                            potentialFollowers.Add(follower);
+
+                            if (potentialFollowers.Count >= targetCount)
+                            {
+                                _logger.LogInformation($"Found {potentialFollowers.Count} users to follow");
+                                await LogRate();
+                                stopProcessing = true; // Set the flag to stop further processing
+                                return; // Exit early from the parallel loop
+                            }
+                        }
+
+                        if (!visitedUsers.Contains(follower))
+                        {
+                            queue.Enqueue(follower);
                         }
                     }
+                    break; // Exit the retry loop on success
+                }
+                catch (ApiException e) when (e.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    _logger.LogWarning($"Too Many Requests for user {currentUser}, retrying in {delayInSeconds} seconds. Attempt {retry + 1} of {maxRetryAttempts}.");
 
-                    if (!visitedUsers.Contains(follower))
+                    if (retry < maxRetryAttempts - 1)
                     {
-                        queue.Enqueue(follower);
+                        await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
+                    }
+                    else
+                    {
+                        _logger.LogError($"Max retry attempts reached for user {currentUser}. Skipping.");
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error fetching followers for {currentUser}: {ex.Message}");
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error fetching followers for {currentUser}: {ex.Message}");
+                    break; // Exit the retry loop on other exceptions
+                }
             }
         });
 
@@ -204,66 +328,108 @@ public class GitHubSocialService : IGitHubSocialService
 
 
 
+
     public async Task FollowPotentialFollowers(List<string> potentialFollowers)
     {
         _logger.LogInformation("Following potential followers");
 
+        int maxRetryAttempts = 3;
+        int delayInSeconds = 300; // 5 minutes
+
         await Parallel.ForEachAsync(potentialFollowers, async (newUser, cancellationToken) =>
         {
-            try
+            for (int retry = 0; retry < maxRetryAttempts; retry++)
             {
-                bool success = await _client.User.Followers.Follow(newUser);
-                if (success)
+                try
                 {
-                    _logger.LogInformation($"Followed: {newUser}");
-                    _followings.Add(newUser);
+                    bool success = await _client.User.Followers.Follow(newUser);
+                    if (success)
+                    {
+                        _logger.LogInformation($"Followed: {newUser}");
+                        _followings.Add(newUser);
+                    }
+                    else
+                    {
+                        _logger.LogError($"Unable to Follow: {newUser}");
+                    }
+
+                    await LogRate();
+                    break; // Exit the retry loop on success
                 }
-                else
+                catch (ApiException e) when (e.StatusCode == HttpStatusCode.TooManyRequests)
                 {
-                    _logger.LogError($"Unable to Follow: {newUser}");
+                    _logger.LogWarning($"Too Many Requests for user {newUser}, retrying in {delayInSeconds} seconds. Attempt {retry + 1} of {maxRetryAttempts}.");
+
+                    if (retry < maxRetryAttempts - 1)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
+                    }
+                    else
+                    {
+                        _logger.LogError($"Max retry attempts reached for user {newUser}. Skipping.");
+                    }
                 }
-                await LogRate();
-            }
-            catch (Exception e)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             {
-                _logger.LogError($"Error following {newUser}: {e.Message}");
+                catch (Exception e)
+                {
+                    _logger.LogError($"Error following {newUser}: {e.Message}");
+                    break; // Exit the retry loop on other exceptions
+                }
             }
         });
 
         _logger.LogInformation("Finished following potential followers");
     }
+
 
 
     public async Task FollowPotentialFollowers(List<string> potentialFollowers, int num)
     {
         var usersToFollow = potentialFollowers.Take(num).ToList();
+        _logger.LogInformation($"Attempting to follow up to {num} potential followers");
 
-        _logger.LogInformation($"Following up to {num} potential followers");
+        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 5 };
 
-        await Parallel.ForEachAsync(usersToFollow, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (newUser, cancellationToken) =>
+        await Parallel.ForEachAsync(usersToFollow, parallelOptions, async (newUser, cancellationToken) =>
         {
-            try
+            bool retry = true;
+            while (retry)
             {
-                bool success = await _client.User.Followers.Follow(newUser);
-                if (success)
+                try
                 {
-                    _logger.LogInformation($"Followed: {newUser}");
-                    _followings.Add(newUser);
+                    bool success = await _client.User.Followers.Follow(newUser);
+                    if (success)
+                    {
+                        _logger.LogInformation($"Successfully followed: {newUser}");
+                        _followings.Add(newUser);
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Unable to follow: {newUser}");
+                    }
+                    retry = false;
+                    await LogRate();
                 }
-                else
+                catch (ApiException e) when (e.StatusCode == HttpStatusCode.TooManyRequests)
                 {
-                    _logger.LogError($"Unable to Follow: {newUser}");
+                    _logger.LogWarning($"Rate limit hit for {newUser}. Retrying in 5 minutes.");
+                    await Task.Delay(TimeSpan.FromMinutes(5));
                 }
-                await LogRate();
-            }
-            catch (Exception e)
-            {
-                _logger.LogError($"Error following {newUser}: {e.Message}");
+                catch (ApiException e)
+                {
+                    _logger.LogError($"API error following {newUser}: {e.Message}");
+                    retry = false;
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError($"Unexpected error following {newUser}: {e.Message}");
+                    retry = false;
+                }
             }
         });
 
-        _logger.LogInformation("Finished following potential followers");
+        _logger.LogInformation("Completed following potential followers");
     }
+
 
 
     private async Task LogRate()
