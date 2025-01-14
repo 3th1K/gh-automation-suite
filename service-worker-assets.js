@@ -33,19 +33,19 @@
       "url": "_framework\/icudt_no_CJK.dat"
     },
     {
-      "hash": "sha256-6wwOQbe4QG4LCy3HmC9w8AOfm7JkvTffKO73uUsBGcY=",
+      "hash": "sha256-ydbLo3zIKUKTd6odOoh5lEiNfk0xHCimSDkBuWnKNTo=",
       "url": "_framework\/blazor.boot.json"
     },
     {
-      "hash": "sha256-t04dmvrx+lSOEaILstaUljWB0n7WBybD94EQC1LSuBc=",
+      "hash": "sha256-cE5S11dhkaWQchZLT\/e0GpnhI6ssuOAH8osNrdFOTFk=",
       "url": "_framework\/Application.wasm"
     },
     {
-      "hash": "sha256-ATikObpZqFHv3Yd\/Ej93b1xuMzs6\/mvcRUOE4oLpDX8=",
+      "hash": "sha256-WJR+kUguwHUi\/d0VXX8ra5qUbYk504IEN9T0TsaZAhg=",
       "url": "_framework\/Domain.wasm"
     },
     {
-      "hash": "sha256-Ro5c3ohsQnjZFxnrg6sKmTE7KDTvVZCVWn0M596i0YY=",
+      "hash": "sha256-3s3C\/kb+Gba+mu80ggBHFZDgeUxWGT+\/PLJN+tqAZa4=",
       "url": "_framework\/GithubAutomation.Web.wasm"
     },
     {
@@ -65,7 +65,7 @@
       "url": "_framework\/Hangfire.NetCore.wasm"
     },
     {
-      "hash": "sha256-QPZiUTAMsH7cEnbZjfpRvvCv7tEdDFu70LhmaXUpj3I=",
+      "hash": "sha256-paSih08QaGP1xoI55q3SgAZfhwj3uey4\/X7GmLgvdGU=",
       "url": "_framework\/Infrastructure.wasm"
     },
     {
@@ -117,7 +117,7 @@
       "url": "_framework\/Microsoft.Extensions.Hosting.Abstractions.wasm"
     },
     {
-      "hash": "sha256-rA3G8oVBMXRVvOtKaxtHxbLPGGgvKjusjksjyFzGbR4=",
+      "hash": "sha256-g+Q4Kxzr53OPmXDHuhoLQBBERsdafWLHnb+VHJFobQ0=",
       "url": "_framework\/Microsoft.Extensions.Logging.Abstractions.wasm"
     },
     {
@@ -457,5 +457,5 @@
       "url": "sample-data\/weather.json"
     }
   ],
-  "version": "4i1iZzTY"
+  "version": "T0p106Fn"
 };
